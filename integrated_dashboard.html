@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integrated Offense Prediction Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            padding: 20px;
+        }
+        h2 {
+            color: #3498db;
+            margin-top: 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            color: #333;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .risk-high {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .risk-medium {
+            color: #f39c12;
+            font-weight: bold;
+        }
+        .risk-low {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .loading {
+            text-align: center;
+            margin: 50px 0;
+            font-size: 18px;
+            color: #7f8c8d;
+        }
+        .chart-container {
+            margin-top: 20px;
+            height: 300px;
+        }
+        .filter-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select, input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Integrated Offense Prediction Dashboard</h1>
+        <p>Comprehensive analysis of when, where, and how offenses will occur</p>
+    </header>
+
+    <div class="container">
+        <div class="card">
+            <h2>Offense Forecasts with Vehicle Type and Time Analysis</h2>
+            <p>This dashboard provides an integrated view of offense predictions, including:</p>
+            <ul>
+                <li>Daily offense count forecasts</li>
+                <li>Day of week risk assessment</li>
+                <li>Recommended vehicle types to monitor</li>
+                <li>Peak hours for offense occurrence</li>
+            </ul>
+            
+            <div class="filter-controls">
+                <div class="form-group">
+                    <label for="days">Forecast Days:</label>
+                    <select id="days">
+                        <option value="7">7 days</option>
+                        <option value="10" selected>10 days</option>
+                        <option value="14">14 days</option>
+                        <option value="30">30 days</option>
+                    </select>
+                </div>
+                <div>
+                    <button id="refreshButton">Refresh Predictions</button>
+                </div>
+            </div>
+            
+            <div id="loading" class="loading">Loading predictions...</div>
+            
+            <table id="predictionsTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Day</th>
+                        <th>Predicted Count</th>
+                        <th>Risk Level</th>
+                        <th>Vehicle Type</th>
+                        <th>Peak Hours</th>
+                    </tr>
+                </thead>
+                <tbody id="predictionsBody">
+                    <!-- Predictions will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="card">
+            <h2>Daily Offense Count Forecast</h2>
+            <div class="chart-container">
+                <canvas id="forecastChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        // Initialize chart
+        let forecastChart = null;
+        
+        // Function to load predictions
+        async function loadPredictions() {
+            const daysSelect = document.getElementById('days');
+            const days = daysSelect.value;
+            
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('predictionsTable').style.display = 'none';
+            
+            try {
+                const response = await fetch(`/api/predictions?days=${days}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success && data.predictions) {
+                    renderPredictionsTable(data.predictions);
+                    renderPredictionsChart(data.predictions);
+                } else {
+                    document.getElementById('loading').innerText = 'Failed to load predictions.';
+                }
+            } catch (error) {
+                console.error('Error loading predictions:', error);
+                document.getElementById('loading').innerText = `Failed to load predictions: ${error.message}`;
+            }
+        }
+        
+        // Function to render predictions table
+        function renderPredictionsTable(predictions) {
+            const tableBody = document.getElementById('predictionsBody');
+            tableBody.innerHTML = '';
+            
+            predictions.forEach(pred => {
+                const row = document.createElement('tr');
+                
+                // Date cell
+                const dateCell = document.createElement('td');
+                dateCell.textContent = pred.date;
+                row.appendChild(dateCell);
+                
+                // Day cell
+                const dayCell = document.createElement('td');
+                dayCell.textContent = pred.day_name;
+                row.appendChild(dayCell);
+                
+                // Count cell
+                const countCell = document.createElement('td');
+                countCell.textContent = pred.predicted_count.toFixed(2);
+                row.appendChild(countCell);
+                
+                // Risk cell
+                const riskCell = document.createElement('td');
+                const riskLevel = pred.day_risk || 'N/A';
+                riskCell.textContent = riskLevel;
+                if (riskLevel === 'HIGH') {
+                    riskCell.className = 'risk-high';
+                } else if (riskLevel === 'MEDIUM') {
+                    riskCell.className = 'risk-medium';
+                } else if (riskLevel === 'LOW') {
+                    riskCell.className = 'risk-low';
+                }
+                row.appendChild(riskCell);
+                
+                // Vehicle Type cell
+                const vehicleCell = document.createElement('td');
+                vehicleCell.textContent = pred.recommended_vehicle_type || 'N/A';
+                row.appendChild(vehicleCell);
+                
+                // Hours cell
+                const hoursCell = document.createElement('td');
+                hoursCell.textContent = pred.top_hours ? pred.top_hours.join(', ') : 'N/A';
+                row.appendChild(hoursCell);
+                
+                tableBody.appendChild(row);
+            });
+            
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('predictionsTable').style.display = 'table';
+        }
+        
+        // Function to render predictions chart
+        function renderPredictionsChart(predictions) {
+            const dates = predictions.map(pred => pred.date);
+            const counts = predictions.map(pred => pred.predicted_count);
+            
+            // Color mapping based on day risk
+            const backgroundColors = predictions.map(pred => {
+                if (pred.day_risk === 'HIGH') return 'rgba(231, 76, 60, 0.7)'; 
+                if (pred.day_risk === 'MEDIUM') return 'rgba(243, 156, 18, 0.7)'; 
+                return 'rgba(39, 174, 96, 0.7)';
+            });
+            
+            const ctx = document.getElementById('forecastChart').getContext('2d');
+            
+            if (forecastChart) {
+                forecastChart.destroy();
+            }
+            
+            forecastChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Predicted Offense Count',
+                        data: counts,
+                        backgroundColor: backgroundColors,
+                        borderColor: backgroundColors.map(color => color.replace('0.7', '1')),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Offense Count'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Load predictions when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPredictions();
+            
+            // Add event listener for refresh button
+            document.getElementById('refreshButton').addEventListener('click', loadPredictions);
+        });
+    </script>
+</body>
+</html> 
