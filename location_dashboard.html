@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High-Violation Location Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            padding: 20px;
+        }
+        h2 {
+            color: #3498db;
+            margin-top: 0;
+        }
+        .top-locations {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .location-card {
+            background-color: #ecf0f1;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            width: calc(50% - 20px);
+            box-sizing: border-box;
+        }
+        .location-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .location-details {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .risk-high {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .risk-medium {
+            color: #f39c12;
+            font-weight: bold;
+        }
+        .risk-low {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        form {
+            margin-top: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select, input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .prediction-result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        .high-risk {
+            background-color: rgba(231, 76, 60, 0.1);
+            border: 1px solid #e74c3c;
+        }
+        .medium-risk {
+            background-color: rgba(243, 156, 18, 0.1);
+            border: 1px solid #f39c12;
+        }
+        .low-risk {
+            background-color: rgba(39, 174, 96, 0.1);
+            border: 1px solid #27ae60;
+        }
+        .risk-gauge {
+            width: 100%;
+            height: 30px;
+            background-color: #ecf0f1;
+            border-radius: 15px;
+            margin-top: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        .risk-level {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(to right, #27ae60, #f39c12, #e74c3c);
+            border-radius: 15px;
+            transition: width 0.5s ease-out;
+        }
+        .risk-marker {
+            position: absolute;
+            top: -15px;
+            width: 3px;
+            height: 30px;
+            background-color: #2c3e50;
+            transform: translateX(-50%);
+        }
+        .risk-text {
+            margin-top: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .section-title {
+            margin-top: 30px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>High-Violation Location Dashboard</h1>
+        <p>Analyzing and predicting locations with high offense rates</p>
+    </header>
+
+    <div class="container">
+        <div class="card">
+            <h2>Overview of Location Analysis</h2>
+            <p>This dashboard presents an analysis of high-violation locations based on historical offense data. The analysis identifies patterns in when and where offenses occur, allowing for better resource allocation and preventive measures.</p>
+            
+            <div class="section-title">
+                <h3>Location Distribution</h3>
+            </div>
+            <img src="location_distribution.png" alt="Distribution of Offenses by Location">
+            <p>The chart above shows the top 20 locations by number of offenses.</p>
+            
+            <div class="section-title">
+                <h3>Weekly Patterns by Location</h3>
+            </div>
+            <img src="location_weekly_trends.png" alt="Weekly Offense Patterns by Location">
+            <p>This chart displays how offense rates change over time for the top 5 locations.</p>
+            
+            <div class="section-title">
+                <h3>Feature Importance</h3>
+            </div>
+            <img src="location_feature_importance.png" alt="Feature Importance for Predicting High-Violation Locations">
+            <p>The chart shows which factors are most important in predicting high-violation locations.</p>
+        </div>
+
+        <div class="card">
+            <h2>Top High-Risk Locations</h2>
+            <div class="top-locations" id="topLocations">
+                <!-- Location cards will be loaded here -->
+                <div class="location-card">
+                    <div class="location-name">Loading data...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Predict High-Violation Probability</h2>
+            <p>Use the form below to predict the likelihood of encountering a high-violation location under specific conditions.</p>
+            
+            <form id="predictionForm">
+                <div class="form-group">
+                    <label for="vehicleType">Vehicle Type:</label>
+                    <select id="vehicleType" required>
+                        <option value="1">Type 1</option>
+                        <option value="2">Type 2</option>
+                        <option value="3">Type 3</option>
+                        <option value="4">Type 4</option>
+                        <option value="5">Type 5</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="dayOfWeek">Day of Week:</label>
+                    <select id="dayOfWeek" required>
+                        <option value="0">Monday</option>
+                        <option value="1">Tuesday</option>
+                        <option value="2">Wednesday</option>
+                        <option value="3">Thursday</option>
+                        <option value="4">Friday</option>
+                        <option value="5">Saturday</option>
+                        <option value="6">Sunday</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="timeOfDay">Time of Day (Hour):</label>
+                    <input type="number" id="timeOfDay" min="0" max="23" required value="12">
+                </div>
+                
+                <button type="submit">Predict Risk</button>
+            </form>
+            
+            <div class="prediction-result" id="predictionResult">
+                <h3>Risk Assessment</h3>
+                <div class="risk-gauge">
+                    <div class="risk-level" id="riskLevel"></div>
+                    <div class="risk-marker" id="riskMarker"></div>
+                </div>
+                <div class="risk-text" id="riskText">Risk level will be displayed here</div>
+                <p id="predictionExplanation"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+        
+        // Function to determine risk level text
+        function getRiskText(risk) {
+            if (risk < 0.4) return "Low Risk";
+            if (risk < 0.7) return "Medium Risk";
+            return "High Risk";
+        }
+
+        // Function to determine risk class
+        function getRiskClass(risk) {
+            if (risk < 0.4) return "low-risk";
+            if (risk < 0.7) return "medium-risk";
+            return "high-risk";
+        }
+
+        // Load top locations from API
+        async function loadTopLocations() {
+            const container = document.getElementById('topLocations');
+            container.innerHTML = '<div class="location-card"><div class="location-name">Loading data...</div></div>';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/top-locations?limit=6`);
+                
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+                
+                const locations = await response.json();
+                
+                if (locations.length === 0) {
+                    container.innerHTML = '<div class="location-card"><div class="location-name">No location data available</div></div>';
+                    return;
+                }
+                
+                container.innerHTML = ''; // Clear loading text
+                
+                locations.forEach(loc => {
+                    const riskText = getRiskText(loc.risk);
+                    const riskClass = `risk-${riskText.toLowerCase().split(' ')[0]}`;
+                    
+                    const card = document.createElement('div');
+                    card.className = 'location-card';
+                    card.innerHTML = `
+                        <div class="location-name">Location ${loc.location}</div>
+                        <div class="location-details">
+                            <div>Total Offenses: <strong>${loc.offenses}</strong></div>
+                            <div>Weekend Ratio: <strong>${(loc.weekendRatio * 100).toFixed(1)}%</strong></div>
+                            <div>Avg Day: <strong>${loc.avgDay.toFixed(1)}</strong> (1=Mon, 7=Sun)</div>
+                            <div>Risk Level: <span class="${riskClass}">${riskText}</span></div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Error loading top locations:', error);
+                container.innerHTML = `
+                    <div class="location-card">
+                        <div class="location-name">Error loading location data</div>
+                        <div class="location-details">${error.message}</div>
+                    </div>
+                `;
+            }
+        }
+
+        // Predict location risk using API
+        async function predictLocationRisk(vehicleType, dayOfWeek, hour) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/predict`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        vehicleType: vehicleType,
+                        dayOfWeek: dayOfWeek,
+                        hour: hour
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                return data.risk;
+            } catch (error) {
+                console.error('Error predicting risk:', error);
+                throw error;
+            }
+        }
+
+        // Handle form submission
+        document.getElementById('predictionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const vehicleType = document.getElementById('vehicleType').value;
+            const dayOfWeek = document.getElementById('dayOfWeek').value;
+            const hour = document.getElementById('timeOfDay').value;
+            
+            const resultDiv = document.getElementById('predictionResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<h3>Risk Assessment</h3><p>Loading prediction...</p>';
+            
+            try {
+                // Get prediction from API
+                const risk = await predictLocationRisk(vehicleType, dayOfWeek, hour);
+                
+                // Update UI
+                resultDiv.innerHTML = `
+                    <h3>Risk Assessment</h3>
+                    <div class="risk-gauge">
+                        <div class="risk-level" id="riskLevel" style="width: ${risk * 100}%"></div>
+                        <div class="risk-marker" id="riskMarker" style="left: ${risk * 100}%"></div>
+                    </div>
+                    <div class="risk-text risk-${getRiskText(risk).toLowerCase().split(' ')[0]}" id="riskText">
+                        ${getRiskText(risk)}: ${(risk * 100).toFixed(1)}%
+                    </div>
+                    <p id="predictionExplanation"></p>
+                `;
+                
+                // Set explanatory text
+                const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][dayOfWeek];
+                const timeDesc = (hour < 6) ? "early morning" : 
+                               (hour < 12) ? "morning" :
+                               (hour < 18) ? "afternoon" : "evening";
+                
+                document.getElementById('predictionExplanation').innerHTML = `
+                    For <strong>Vehicle Type ${vehicleType}</strong> on <strong>${dayName}</strong> during the <strong>${timeDesc}</strong> (${hour}:00),
+                    there is a <strong>${(risk * 100).toFixed(1)}%</strong> probability of encountering a high-violation location.
+                    ${risk >= 0.7 ? 
+                      '<span class="risk-high">Extra caution and enforcement recommended.</span>' : 
+                      risk >= 0.4 ? 
+                      '<span class="risk-medium">Standard vigilance recommended.</span>' : 
+                      '<span class="risk-low">Lower violation probability.</span>'}
+                `;
+                
+                // Set class based on risk level
+                resultDiv.className = `prediction-result ${getRiskClass(risk)}`;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3>Risk Assessment</h3>
+                    <p>Error getting prediction: ${error.message}</p>
+                `;
+                resultDiv.className = 'prediction-result';
+            }
+        });
+
+        // Load data when page loads
+        window.addEventListener('load', function() {
+            loadTopLocations();
+        });
+    </script>
+</body>
+</html> 
