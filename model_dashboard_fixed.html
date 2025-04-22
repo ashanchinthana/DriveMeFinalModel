@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offense Prediction Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            padding: 20px;
+        }
+        .metrics {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .metric-card {
+            background-color: #ecf0f1;
+            border-radius: 8px;
+            padding: 15px;
+            width: 30%;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2980b9;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+        form {
+            margin-top: 20px;
+        }
+        input[type="date"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .accuracy {
+            font-size: 20px;
+            text-align: center;
+            margin: 20px 0;
+            color: #27ae60;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Offense Prediction Dashboard</h1>
+        <p>Analysis and prediction of daily offense counts</p>
+    </header>
+
+    <div class="container">
+        <div class="card">
+            <h2>Model Performance</h2>
+            <div class="metrics">
+                <div class="metric-card">
+                    <h3>MSE</h3>
+                    <div class="metric-value" id="mse-value">Loading...</div>
+                </div>
+                <div class="metric-card">
+                    <h3>RMSE</h3>
+                    <div class="metric-value" id="rmse-value">Loading...</div>
+                </div>
+                <div class="metric-card">
+                    <h3>MAE</h3>
+                    <div class="metric-value" id="mae-value">Loading...</div>
+                </div>
+            </div>
+            <div class="accuracy" id="accuracy-value">Loading accuracy percentage...</div>
+        </div>
+
+        <div class="card">
+            <h2>Prediction Visualization</h2>
+            <img src="model_test_results.png" alt="Predictions vs Actual Values" id="prediction-chart">
+        </div>
+
+        <div class="card">
+            <h2>Make New Predictions</h2>
+            <form id="prediction-form">
+                <div>
+                    <label for="start-date">Start Date:</label>
+                    <input type="date" id="start-date" required>
+                </div>
+                <div>
+                    <label for="end-date">End Date:</label>
+                    <input type="date" id="end-date" required>
+                </div>
+                <button type="submit">Generate Predictions</button>
+            </form>
+            
+            <div id="predictions-result" style="display: none;">
+                <h3>Prediction Results</h3>
+                <table id="predictions-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Predicted Offense Count</th>
+                        </tr>
+                    </thead>
+                    <tbody id="predictions-data">
+                        <!-- Predictions will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Function to load the latest model metrics
+        async function loadModelMetrics() {
+            try {
+                document.getElementById('mse-value').textContent = "156.3446";
+                document.getElementById('rmse-value').textContent = "12.5038";
+                document.getElementById('mae-value').textContent = "10.0803";
+                document.getElementById('accuracy-value').textContent = "35.90% of predictions within +/- 5 of actual value";
+            } catch (error) {
+                console.error('Error loading metrics:', error);
+            }
+        }
+
+        // Function to handle form submission for predictions
+        document.getElementById('prediction-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+            
+            // Validate dates
+            if (new Date(startDate) > new Date(endDate)) {
+                alert('End date must be after start date');
+                return;
+            }
+            
+            // Show loading indicator
+            document.getElementById('predictions-data').innerHTML = '<tr><td colspan="2">Loading predictions...</td></tr>';
+            document.getElementById('predictions-result').style.display = 'block';
+            
+            try {
+                // Make API call to predict endpoint
+                const requestBody = {
+                    start_date: startDate,
+                    end_date: endDate
+                };
+                
+                console.log('Sending request to API:', requestBody);
+                
+                const response = await fetch('http://127.0.0.1:8000/predict/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API returned ${response.status}: ${response.statusText}`);
+                }
+                
+                const predictions = await response.json();
+                console.log('Received predictions:', predictions);
+                
+                // Display results
+                displayPredictions(predictions);
+                
+            } catch (error) {
+                console.error('Error making prediction:', error);
+                document.getElementById('predictions-data').innerHTML = 
+                    `<tr><td colspan="2">Error: ${error.message || 'Failed to get predictions'}</td></tr>`;
+            }
+        });
+
+        // Function to display predictions in the table
+        function displayPredictions(predictions) {
+            const tableBody = document.getElementById('predictions-data');
+            tableBody.innerHTML = ''; // Clear existing data
+            
+            // Add each prediction to the table
+            for (const [date, count] of Object.entries(predictions)) {
+                const row = document.createElement('tr');
+                
+                const dateCell = document.createElement('td');
+                dateCell.textContent = date;
+                row.appendChild(dateCell);
+                
+                const countCell = document.createElement('td');
+                countCell.textContent = count.toFixed(2);
+                row.appendChild(countCell);
+                
+                tableBody.appendChild(row);
+            }
+            
+            // Show the predictions section
+            document.getElementById('predictions-result').style.display = 'block';
+        }
+
+        // Load initial data when page loads
+        window.addEventListener('load', function() {
+            loadModelMetrics();
+        });
+    </script>
+</body>
+</html> 
