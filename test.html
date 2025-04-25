@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Location Server Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #3498db;
+        }
+        .success {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .error {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Location Server Test</h1>
+        <p>This page tests if your server is accessible and responding to API requests.</p>
+
+        <div>
+            <button id="testAPI">Test API Connection</button>
+            <button id="testImage">Test Image Loading</button>
+        </div>
+
+        <div id="results">
+            <p>Click the buttons above to test server connectivity.</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('testAPI').addEventListener('click', async function() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>Testing API connection...</p>';
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/api/top-locations?limit=2');
+                
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                resultsDiv.innerHTML = `
+                    <p class="success">✅ API connection successful!</p>
+                    <p>Received data from server:</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <p class="error">❌ API connection failed: ${error.message}</p>
+                    <p>Possible reasons:</p>
+                    <ul>
+                        <li>Server is not running</li>
+                        <li>CORS is not configured correctly</li>
+                        <li>Network or firewall issue</li>
+                    </ul>
+                    <p>Try accessing API directly: <a href="http://127.0.0.1:5000/api/top-locations?limit=2" target="_blank">http://127.0.0.1:5000/api/top-locations?limit=2</a></p>
+                `;
+            }
+        });
+
+        document.getElementById('testImage').addEventListener('click', function() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>Testing image loading...</p>';
+
+            const img = new Image();
+            img.onload = function() {
+                resultsDiv.innerHTML = `
+                    <p class="success">✅ Image loaded successfully!</p>
+                    <img src="http://127.0.0.1:5000/location_distribution.png" alt="Test Image" style="max-width: 100%;">
+                `;
+            };
+            img.onerror = function() {
+                resultsDiv.innerHTML = `
+                    <p class="error">❌ Image failed to load</p>
+                    <p>Possible reasons:</p>
+                    <ul>
+                        <li>Server is not running</li>
+                        <li>Image does not exist</li>
+                        <li>CORS is not configured correctly</li>
+                    </ul>
+                    <p>Try accessing image directly: <a href="http://127.0.0.1:5000/location_distribution.png" target="_blank">http://127.0.0.1:5000/location_distribution.png</a></p>
+                `;
+            };
+            img.src = 'http://127.0.0.1:5000/location_distribution.png';
+        });
+    </script>
+</body>
+</html> 

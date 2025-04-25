@@ -1,0 +1,10 @@
+pandas
+matplotlib
+seaborn
+statsmodels
+scikit-learn
+torch
+joblib
+streamlit
+fastapi
+uvicorn[standard] 
